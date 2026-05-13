@@ -1,53 +1,42 @@
 const User = require("../models/User");
-
-const bcrypt =
-    require("bcryptjs");
+const bcrypt = require("bcryptjs");
 
 // ==========================
-// REGISTER
+// REGISTER USER
 // ==========================
-exports.register =
-    async (req, res) => {
+exports.register = async (req, res) => {
 
     try {
 
         const {
-
             name,
             phone,
-            pin,
-            confirmPin
-
+            pin
         } = req.body;
 
+        // ==========================
         // VALIDATION
+        // ==========================
         if (
             !name ||
             !phone ||
-            !pin ||
-            !confirmPin
+            !pin
         ) {
 
-            return res.status(400)
-                .json({
-                    message:
-                        "All fields are required"
-                });
+            return res.status(400).json({
+                message: "All fields are required"
+            });
         }
 
         // PHONE VALIDATION
         const phoneRegex =
             /^[6-9]\d{9}$/;
 
-        if (
-            !phoneRegex.test(phone)
-        ) {
+        if (!phoneRegex.test(phone)) {
 
-            return res.status(400)
-                .json({
-                    message:
-                        "Invalid phone number"
-                });
+            return res.status(400).json({
+                message: "Invalid phone number"
+            });
         }
 
         // PIN VALIDATION
@@ -56,85 +45,76 @@ exports.register =
             isNaN(pin)
         ) {
 
-            return res.status(400)
-                .json({
-                    message:
-                        "PIN must be 4 digits"
-                });
-        }
-
-        if (pin !== confirmPin) {
-
-            return res.status(400)
-                .json({
-                    message:
-                        "PIN values do not match"
-                });
-        }
-
-        // CHECK USER
-        const existingUser =
-            await User.findOne({
-                phone
+            return res.status(400).json({
+                message: "PIN must be exactly 4 digits"
             });
+        }
+
+        // ==========================
+        // CHECK EXISTING USER
+        // ==========================
+        const existingUser =
+            await User.findOne({ phone });
 
         if (existingUser) {
 
-            return res.status(400)
-                .json({
-                    message:
-                        "Phone number already registered"
-                });
+            return res.status(400).json({
+                message:
+                    "Phone number already registered"
+            });
         }
 
+        // ==========================
         // HASH PIN
+        // ==========================
         const hashedPin =
-            await bcrypt.hash(
-                pin,
-                10
-            );
+            await bcrypt.hash(pin, 10);
 
+        // ==========================
         // CREATE USER
+        // ==========================
         const user =
             await User.create({
 
                 name,
                 phone,
-
                 pin: hashedPin
             });
 
-        res.status(201)
-            .json({
+        // ==========================
+        // SUCCESS RESPONSE
+        // ==========================
+        res.status(201).json({
 
-                message:
-                    "Account created successfully",
+            message:
+                "Account created successfully",
 
-                user: {
+            user: {
 
-                    id: user._id,
-                    name: user.name,
-                    phone: user.phone
-                }
-            });
+                id: user._id,
+                name: user.name,
+                phone: user.phone
+            }
+        });
 
     } catch (error) {
 
-        console.error(error);
+        console.log(
+            "REGISTER ERROR:",
+            error
+        );
 
-        res.status(500)
-            .json({
-                message:
-                    "Server Error"
-            });
+        res.status(500).json({
+            message:
+                "Server Error"
+        });
     }
 };
 
 // ==========================
-// LOGIN
+// LOGIN USER
 // ==========================
-exports.login =
-    async (req, res) => {
+exports.login = async (req, res) => {
 
     try {
 
@@ -143,35 +123,36 @@ exports.login =
             pin
         } = req.body;
 
-        // CHECK FIELDS
+        // ==========================
+        // VALIDATION
+        // ==========================
         if (
             !phone ||
             !pin
         ) {
 
-            return res.status(400)
-                .json({
-                    message:
-                        "Phone and PIN required"
-                });
+            return res.status(400).json({
+                message:
+                    "Phone and PIN are required"
+            });
         }
 
+        // ==========================
         // FIND USER
+        // ==========================
         const user =
-            await User.findOne({
-                phone
-            });
+            await User.findOne({ phone });
 
         if (!user) {
 
-            return res.status(400)
-                .json({
-                    message:
-                        "User not found"
-                });
+            return res.status(400).json({
+                message: "User not found"
+            });
         }
 
+        // ==========================
         // CHECK PIN
+        // ==========================
         const isMatch =
             await bcrypt.compare(
                 pin,
@@ -180,44 +161,45 @@ exports.login =
 
         if (!isMatch) {
 
-            return res.status(400)
-                .json({
-                    message:
-                        "Invalid PIN"
-                });
+            return res.status(400).json({
+                message: "Invalid PIN"
+            });
         }
 
-        res.status(200)
-            .json({
+        // ==========================
+        // SUCCESS RESPONSE
+        // ==========================
+        res.status(200).json({
 
-                message:
-                    "Login successful",
+            message:
+                "Login successful",
 
-                user: {
+            user: {
 
-                    id: user._id,
-                    name: user.name,
-                    phone: user.phone
-                }
-            });
+                id: user._id,
+                name: user.name,
+                phone: user.phone
+            }
+        });
 
     } catch (error) {
 
-        console.error(error);
+        console.log(
+            "LOGIN ERROR:",
+            error
+        );
 
-        res.status(500)
-            .json({
-                message:
-                    "Server Error"
-            });
+        res.status(500).json({
+            message:
+                "Server Error"
+        });
     }
 };
 
 // ==========================
 // DELETE ACCOUNT
 // ==========================
-exports.deleteAccount =
-    async (req, res) => {
+exports.deleteAccount = async (req, res) => {
 
     try {
 
@@ -226,20 +208,36 @@ exports.deleteAccount =
             pin
         } = req.body;
 
-        const user =
-            await User.findOne({
-                phone
+        // ==========================
+        // VALIDATION
+        // ==========================
+        if (
+            !phone ||
+            !pin
+        ) {
+
+            return res.status(400).json({
+                message:
+                    "Phone and PIN are required"
             });
+        }
+
+        // ==========================
+        // FIND USER
+        // ==========================
+        const user =
+            await User.findOne({ phone });
 
         if (!user) {
 
-            return res.status(404)
-                .json({
-                    message:
-                        "User not found"
-                });
+            return res.status(404).json({
+                message: "User not found"
+            });
         }
 
+        // ==========================
+        // CHECK PIN
+        // ==========================
         const isMatch =
             await bcrypt.compare(
                 pin,
@@ -248,31 +246,36 @@ exports.deleteAccount =
 
         if (!isMatch) {
 
-            return res.status(400)
-                .json({
-                    message:
-                        "Invalid PIN"
-                });
+            return res.status(400).json({
+                message: "Invalid PIN"
+            });
         }
 
+        // ==========================
+        // DELETE USER
+        // ==========================
         await User.findByIdAndDelete(
             user._id
         );
 
-        res.status(200)
-            .json({
-                message:
-                    "Account deleted"
-            });
+        // ==========================
+        // SUCCESS RESPONSE
+        // ==========================
+        res.status(200).json({
+            message:
+                "Account deleted successfully"
+        });
 
     } catch (error) {
 
-        console.error(error);
+        console.log(
+            "DELETE ACCOUNT ERROR:",
+            error
+        );
 
-        res.status(500)
-            .json({
-                message:
-                    "Server Error"
-            });
+        res.status(500).json({
+            message:
+                "Server Error"
+        });
     }
 };
